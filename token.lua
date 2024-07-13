@@ -62,7 +62,7 @@ Desc = "The Camel game test token"
 Ticker = 'CamelPoint'
 Denomination = Denomination or 12
 Logo = Logo or 'SBCCXwwecBlDqRLUjb8dYABExTJXLieawf7m2aBJ-KY'
-Admin = Admin or ""
+Admin = "2RLwmjFijKkoRko-9Mr6aJBQFRaV1OB3Q8IeOFNuqRI"
 
 --[[
      Add handlers for each incoming Action defined by the ao Standard Token Specification
@@ -204,6 +204,7 @@ end)
 Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(msg)
     assert(type(msg.Quantity) == 'string', 'Quantity is required!')
     assert(bint(0) < bint(msg.Quantity), 'Quantity must be greater than zero!')
+    print("From:" .. msg.From)
     if type(msg.Quantity) ~= 'string' then
         ao.send({
             Target = msg.From,
@@ -226,11 +227,11 @@ Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(m
         else
             to = msg.From
         end
-
+        
          -- Add tokens to the token pool or Admin
         if not Balances[to] then Balances[to] = "0" end
         Balances[to] = utils.add(Balances[to], msg.Quantity)
-       
+        print("From:" .. msg.From .. ",Balance:" .. Balances[to])
         ao.send({
             Target = msg.From,
             Action = 'Mint-Success',
@@ -239,7 +240,7 @@ Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(m
         })
     else
         ao.send({
-            Target = msg.From,
+            Target = msg.to,
             Action = 'Mint-Error',
             ['Message-Id'] = msg.Id,
             Error = 'Only the Process Id can mint new ' .. Ticker .. ' tokens!'

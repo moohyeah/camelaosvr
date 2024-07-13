@@ -117,22 +117,21 @@ local _exit = function(msg)
     end
 
     local player = Players[msg.From]
-    -- if player.state ~= "playing" then
-    --     ao.send({
-    --         Target = msg.From,
-    --         Action = 'Verify-Error',
-    --         Data = "Failed",
-    --         Error = "Player is not playing the game"
-    --     })
-    --     return
-    -- end
+    if player.state ~= "playing" then
+        ao.send({
+            Target = msg.From,
+            Action = 'Verify-Error',
+            Data = "Failed",
+            Error = "Player is not playing the game"
+        })
+        return
+    end
 
     player.state = "idle"
 
     local valid = game.Verify(msg.From, bint(msg.Tags.Score))
     if valid then
         local tokens = game.CalculateToken(bint(msg.Tags.Score))
-
         -- mint token for player
         game.Mint(msg.From, tokens)
         -- wait for minting tokens
@@ -200,13 +199,26 @@ end
      -- return: int, number of the tokens
 ]]--
 game.Mint = function (player_addr, tokens)
+    print("===ao.id:" .. ao.id)
     local msg = ao.send({
         Target = TokenId,
         Action = "Mint",
         Quantity = tostring(tokens),
         To = player_addr
     })
-    print(pretty.tprint(msg))
+    -- local msg = {
+    --     From = ao.id,
+    --     Quantity = tostring(tokens),
+    --     Tags = {
+    --         To = player_addr,
+    --     }
+    -- }
+    -- for _, hanlder in pairs(Handlers.list) do
+    --     if "mint" == hanlder.name then
+    --         hanlder.handle(msg, ao.env)
+    --     end
+    -- end
+    -- print(pretty.tprint(msg))
 end
 
 --[[
