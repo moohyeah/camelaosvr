@@ -236,7 +236,7 @@ game.FinishTask = function(msg)
 
     local player = Players[msg.From]
     if not player.tasks then
-        player:ResetTask()
+        Player.ResetTask(player)
     end
 
     local taskCfg = TaskCfg[tonumber(msg.Tags.TaskId)]
