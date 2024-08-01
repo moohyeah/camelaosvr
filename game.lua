@@ -69,7 +69,6 @@ game.Play = function(msg)
         Players[msg.From] = Player:new(nil)
     end
     local player = Players[msg.From]
-    print(msg.From ..  " GamePlay")
 
     player.state = "playing"
     -- clear timeline
@@ -129,7 +128,7 @@ local _exit = function(msg)
 
     player.state = "idle"
 
-    local valid = game.Verify(msg.From, bint(msg.Tags.Score), bint(msg.Tags.CheckSum))
+    local valid = game.Verify(msg.From, tonumber(msg.Tags.Score), tonumber(msg.Tags.CheckSum))
     if valid then
         local tokens = game.CalculateToken(bint(msg.Tags.Score))
         -- mint token for player
@@ -173,9 +172,9 @@ end
 ]]--
 game.Verify = function(player_addr, score, check_sum)
     local player = Players[player_addr]
-    
-    -- TODO: verify player's timeline
-    return player.randoms[score] == check_sum
+    local randVal = player.randoms[#player.randoms][score]
+    -- print(player_addr .. "," .. check_sum .. "," .. score .. "," .. randVal)
+    return randVal == check_sum
 end
 
 --[[
@@ -201,6 +200,7 @@ end
      -- return: int, number of the tokens
 ]]--
 game.Mint = function (player_addr, tokens)
+    print("===Mint:" .. player_addr .. "," .. tokens)
     local msg = ao.send({
         Target = TokenId,
         Action = "Mint",
