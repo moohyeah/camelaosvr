@@ -10,7 +10,7 @@ Desc = "The Watermelon test game logic"
 TokenId = TokenId or "2RLwmjFijKkoRko-9Mr6aJBQFRaV1OB3Q8IeOFNuqRI"
 
 EnergyRecoverTime = EnergyRecoverTime or 1 * 60 * 1000 -- 1 hour
-LastUpdateTime = LastUpdateTime or undefined
+LastUpdateTime = LastUpdateTime or nil
 Now = Now or os.time()
 
 ---@class game logic
@@ -22,6 +22,20 @@ game.co_pool = game.co_pool or {}
 ---@class Player
 Player = {}
 
+TaskCfg = {
+    [1] = {taskRewardNum = 1, isDaily = false},
+    [2] = {taskRewardNum = 1, isDaily = false},
+    [3] = {taskRewardNum = 1, isDaily = false},
+    [4] = {taskRewardNum = 1, isDaily = false},
+    [5] = {taskRewardNum = 1, isDaily = true},
+    [6] = {taskRewardNum = 1, isDaily = true},
+    [7] = {taskRewardNum = 1, isDaily = true},
+    [8] = {taskRewardNum = 1, isDaily = true},
+    [9] = {taskRewardNum = 1, isDaily = true},
+    [10] = {taskRewardNum = 3, isDaily = false},
+    [101] = {taskRewardNum = 10, isDaily = false},
+    [102] = {taskRewardNum = 3, isDaily = true},
+}
 
 function Player:new(o)
     o = o or {}
@@ -33,6 +47,7 @@ function Player:new(o)
     o.timeline = {} -- Record player operation sequence
     o.randoms = {} -- random list {}
     o.state = "idle" -- idle or playing
+    self:ResetTask()
     return o
 end
 
@@ -40,6 +55,19 @@ function Player:AddEnergy(num)
     self.energy = self.energy + num
     if self.energy > 10 then
         self.energy = 10
+    end
+end
+
+function Player:ResetTask()
+    local isNew = false
+    if not self.tasks then
+        self.tasks = {}
+        isNew = true
+    end
+    for k, v in pairs(TaskCfg) do
+        if v.isDaily or isNew then
+            self.tasks[k] = {recieved = false}
+        end
     end
 end
 
@@ -178,6 +206,67 @@ game.Verify = function(player_addr, score, check_sum)
 end
 
 --[[
+    Get player's Energy
+
+    - From: string , player address
+]]--
+game.Energy = function(msg)
+    if not Players[msg.From] then
+        Players[msg.From] = Player:new(nil)
+    end
+
+    ao.send({
+        Target = msg.From,
+        Data = tostring(Players[msg.From].energy)
+    })
+end
+
+--[[
+    finish game task
+    - From: string, player address
+    - score: string, score of this game
+]]--
+game.FinishTask = function(msg)
+    assert(type(msg.Tags.TaskId) == 'string', 'TaskId is required!')
+    assert(bint(0) <= bint(msg.Tags.TaskId), 'TaskId must be greater than 0')
+    
+    if not Players[msg.From] then
+        Players[msg.From] = Player:new(nil)
+    end
+
+    local player = Players[msg.From]
+    if not player.tasks then
+        player:ResetTask()
+    end
+
+    local taskCfg = TaskCfg[tonumber(msg.Tags.TaskId)]
+    assert(taskCfg, 'Task not Exist!')
+
+    if not player.tasks[tonumber(msg.Tags.TaskId)].recieved then
+        local tokens = taskCfg.taskRewardNum
+        -- mint token for player
+        game.Mint(msg.From, tokens)
+        -- wait for minting tokens
+        --coroutine.yield()
+        -- ao.send({ Target = TokenId, Action = "Transfer", Recipient = msg.From, Quantity = tostring(tokens)})
+        
+        -- send msg to player
+        ao.send({
+            Target = msg.From,
+            Tokens = tostring(tokens),
+            Data = "success",
+        })
+    else
+        ao.send({
+            Target = msg.From,
+            Action = 'Finsh-Error',
+            Data = "Failed",
+            Error = "Finsh failed"
+        })
+    end
+end
+
+--[[
      Calculate how many tokens can get based on the score
 
      -- score: int
@@ -243,18 +332,28 @@ game.CronTick = function(msg)
         LastUpdateTime = Now
     end
 
-    -- recover player's energy
-    if Now - LastUpdateTime > EnergyRecoverTime then
+    --[[
+     Reset Game Task Daily
+    ]]--
+    if os.date("*t", LastUpdateTime).day ~= os.date("*t", LastUpdateTime).Now  then
         for _, player in pairs(Players) do
-            player:AddEnergy(1)
+            player:ResetTask()
         end
         LastUpdateTime = Now
-
-        ao.send({
-            Target = ao.id,
-            Data = "add energy for all players",
-        })
     end
+
+    -- recover player's energy
+    -- if Now - LastUpdateTime > EnergyRecoverTime then
+    --     for _, player in pairs(Players) do
+    --         player:AddEnergy(1)
+    --     end
+    --     LastUpdateTime = Now
+
+    --     ao.send({
+    --         Target = ao.id,
+    --         Data = "add energy for all players",
+    --     })
+    -- end
     
 end
 
@@ -293,6 +392,7 @@ end
 
 -- registry handlers
 Handlers.add('play', Handlers.utils.hasMatchingTag('Action', 'Play'), game.Play)
+Handlers.add('finishTask', Handlers.utils.hasMatchingTag('Action', 'FinishTask'), game.FinishTask)
 Handlers.add('energy', Handlers.utils.hasMatchingTag('Action', 'Energy'), game.Energy)
 Handlers.add('exit', Handlers.utils.hasMatchingTag('Action', 'Exit'), game.Exit)
 -- Handlers.add('mint-success', Handlers.utils.hasMatchingTag('Action', 'Mint-Success'), game.MintResponse)
