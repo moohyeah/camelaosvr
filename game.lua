@@ -9,6 +9,8 @@ Name = "Watermelon game test logic"
 Desc = "The Watermelon test game logic"
 TokenId = TokenId or "2RLwmjFijKkoRko-9Mr6aJBQFRaV1OB3Q8IeOFNuqRI"
 
+ACHIEVEMENT_TARGET ='t5n70p0zPQsro-NZxIuGX4izLJF5-lixZvRs04eLZoY'
+
 EnergyRecoverTime = EnergyRecoverTime or 1 * 60 * 1000 -- 1 hour
 LastUpdateTime = LastUpdateTime or nil
 Now = Now or os.time()
@@ -25,12 +27,12 @@ Player = {}
 TaskCfg = {
     [1] = {taskRewardNum = 1, isDaily = false},
     [2] = {taskRewardNum = 1, isDaily = false},
-    [3] = {taskRewardNum = 1, isDaily = false},
-    [4] = {taskRewardNum = 1, isDaily = false},
+    -- [3] = {taskRewardNum = 1, isDaily = false},
+    -- [4] = {taskRewardNum = 1, isDaily = false},
     [5] = {taskRewardNum = 1, isDaily = true},
     [6] = {taskRewardNum = 1, isDaily = true},
     [7] = {taskRewardNum = 1, isDaily = true},
-    [8] = {taskRewardNum = 1, isDaily = true},
+    -- [8] = {taskRewardNum = 1, isDaily = true},
     [9] = {taskRewardNum = 1, isDaily = true},
     [10] = {taskRewardNum = 3, isDaily = false},
     [101] = {taskRewardNum = 10, isDaily = false},
@@ -171,6 +173,21 @@ local _exit = function(msg)
             Tokens = tostring(tokens),
             Data = "success",
         })
+
+        if tonumber(msg.Tags.Score) == 100 then
+            ao.send({
+                Target = ACHIEVEMENT_TARGET,
+                Tags = {
+                    Action ='AppendAchievement',
+                },
+                Data = json.encode({
+                    title ='The King of Kings',
+                    description='I defeat 99.99% person. What about you?',
+                    proven = "",
+                    address = msg.From
+                })
+            })
+        end    
     else
         ao.send({
             Target = msg.From,
@@ -386,8 +403,6 @@ game.GetRandom = function(msg)
     -- save random list    
     player.randoms[#player.randoms+1] = rondom10
 end
-
-
 
 
 -- registry handlers
