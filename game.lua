@@ -9,7 +9,7 @@ Name = "Watermelon game test logic"
 Desc = "The Watermelon test game logic"
 TokenId = TokenId or "2RLwmjFijKkoRko-9Mr6aJBQFRaV1OB3Q8IeOFNuqRI"
 
-ACHIEVEMENT_TARGET ='t5n70p0zPQsro-NZxIuGX4izLJF5-lixZvRs04eLZoY'
+ACHIEVEMENT_TARGET ='t5n7Op0zPQsro-NZxIuGX4izLJF5-lixZvRsO4eLZoY'
 
 EnergyRecoverTime = EnergyRecoverTime or 1 * 60 * 1000 -- 1 hour
 LastUpdateTime = LastUpdateTime or nil
@@ -181,8 +181,8 @@ local _exit = function(msg)
                     Action ='AppendAchievement',
                 },
                 Data = json.encode({
-                    title ='yalla jamel：The King of Kings ',
-                    description='I defeat 99.99% person. What about you?',
+                    title = 'yalla jamel:The King of Kings ',
+                    data = 'I defeat 99.99% person. What about you?',
                     proven = "",
                     address = msg.From
                 })
